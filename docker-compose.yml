@@ -1,0 +1,37 @@
+services:
+  # Builds and tags the sandbox image the API spawns per trace.
+  runner:
+    build: ./runner
+    image: codelens-runner
+    command: ["true"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    environment:
+      - PORT=3001
+      - RUNNER_IMAGE=codelens-runner
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-sonnet-5-5}
+      - MAX_CONTAINERS=${MAX_CONTAINERS:-3}
+    volumes:
+      # The API spawns sibling runner containers on the host daemon.
+      # This grants the api container full Docker control — local/dev only;
+      # see the README "Security" section before hosting anything publicly.
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "3001:3001"
+    depends_on:
+      runner:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - api

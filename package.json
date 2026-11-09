@@ -2,10 +2,13 @@
   "name": "codelens-c",
   "private": true,
   "workspaces": [
-    "api"
+    "api",
+    "web"
   ],
   "scripts": {
     "build:runner": "docker build -t codelens-runner runner",
+    "dev:api": "npm run start -w api",
+    "dev:web": "npm run dev -w web",
     "test": "npm run test --workspaces --if-present"
   }
 }

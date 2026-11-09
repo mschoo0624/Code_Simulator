@@ -87,3 +87,48 @@ Running log of implementation decisions where the spec left room (or reality dis
 13. **Recursion fixture language.** The M1 recursion acceptance test uses C fibonacci
     (the C++ preset arrives with the UI milestone); what is being tested is
     `stackDepth` bookkeeping, which is language independent.
+
+## Milestone 2–6 — API, annotation, UI, hardening
+
+14. **Sandbox hard-kill budget is 25 s, not 12 s.** The in-container pipeline can
+    legitimately take compile (≤10 s) + GDB (≤11 s) ≈ 21 s in the worst case while
+    still producing a graceful, structured result. A 12 s hard kill would destroy
+    that result and return a raw timeout instead. Typical runs finish in 1–12 s;
+    the 25 s ceiling only matters for pathological inputs, which still end cleanly.
+
+15. **`/api/annotate` prefers the server-side cached trace.** The endpoint accepts
+    `{language, solution, driver, trace?}`; if the trace for that exact input is in
+    the server cache (it always is right after `/api/trace`), the inline `trace` is
+    unnecessary. This keeps request bodies within the 200 KB cap even for large
+    traces. An inline trace is honored when the cache has evicted the entry.
+
+16. **Compose mounts the Docker socket into the API container** so the API can spawn
+    sibling runner containers. This is root-equivalent on the host and is called out
+    in the README; acceptable for the local/dev scope of this project, unacceptable
+    for public hosting (use gVisor/Firecracker and an isolated runner host).
+
+17. **Renderer props include `solution`.** The spec's renderer props are
+    `{step, prevStep?, annotation, trace}`; BitsArrayView additionally needs the
+    current source line text for the source-cell heuristic, so the registry passes
+    `solution` to all renderers as a fifth prop.
+
+18. **Driver edits during playback reset the player.** Editing either pane while a
+    trace is loaded returns the player to `idle` (editors become writable again);
+    this avoids showing decorations against lines that no longer match the trace.
+
+19. **Heuristic visualization chooser (works for ANY code, no LLM needed).**
+    `api/src/heuristicViz.ts` (mirrored in `web/src/heuristicViz.ts`) scans the
+    trace for drawable structures: arrays (stack/heap/STL) → `array`/`grid`,
+    `ptr→struct` with `next` → `linked_list`, with `left`+`right` → `tree`, bare
+    heap pointers → `memory`, else `variables`. `bits_array` is chosen when the
+    primary is an array of small non-negative ints AND the solution text contains
+    bitwise operators. "Pointer" companions are ints that change at least once and
+    stay within `[-1, len]` (excludes constants like `n`), plus pointers carrying a
+    `base/offset`. The client uses it instantly on trace arrival; the server uses
+    it as the annotate fallback; the LLM (when configured) overrides both.
+
+20. **BitsArrayView parses the *previous* step's line for the source cell.** GDB
+    stops *before* executing a line, so a write observed in `changedIndices` at
+    step N was produced by the line of step N-1. Index expressions are evaluated
+    against the current locals first, then the previous step's locals (the index
+    variable may have left scope, e.g. after the final loop iteration).
