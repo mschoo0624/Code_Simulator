@@ -1,0 +1,11 @@
+{
+  "name": "codelens-c",
+  "private": true,
+  "workspaces": [
+    "api"
+  ],
+  "scripts": {
+    "build:runner": "docker build -t codelens-runner runner",
+    "test": "npm run test --workspaces --if-present"
+  }
+}
