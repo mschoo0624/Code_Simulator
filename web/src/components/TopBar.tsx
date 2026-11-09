@@ -1,4 +1,4 @@
-import { presets, type Preset } from "../examples/presets";
+import { customTemplates, presets, type Preset } from "../examples/presets";
 
 interface Props {
   language: "c" | "cpp";
@@ -45,7 +45,7 @@ export function TopBar({ language, onLanguage, onPreset, onIllustrate, busy }: P
           style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--fg)" }}
           defaultValue=""
           onChange={(e) => {
-            const p = presets.find((x) => x.id === e.target.value);
+            const p = [...customTemplates, ...presets].find((x) => x.id === e.target.value);
             if (p) onPreset(p);
             e.target.value = "";
           }}
@@ -53,11 +53,20 @@ export function TopBar({ language, onLanguage, onPreset, onIllustrate, busy }: P
           <option value="" disabled>
             choose…
           </option>
-          {presets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
+          <optgroup label="Write your own (any C/C++ code)">
+            {customTemplates.map((p) => (
+              <option key={p.id} value={p.id}>
+                ✏️ {p.label}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Examples">
+            {presets.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </optgroup>
         </select>
       </label>
 

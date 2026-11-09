@@ -6,6 +6,71 @@ export interface Preset {
   driver: string;
 }
 
+/** Blank starting points for writing ANY custom C/C++ code. */
+export const customTemplates: Preset[] = [
+  {
+    id: "custom-c",
+    label: "Custom code (C)",
+    language: "c",
+    solution: `/* Write ANY C code here: arrays, pointers, structs, linked lists,
+   trees, recursion, malloc/free... The visualizer traces the real
+   execution and automatically picks a fitting illustration. */
+
+int solve(int* a, int n) {
+    int sum = 0;
+    for (int i = 0; i < n; i++) {
+        sum += a[i];
+    }
+    return sum;
+}
+`,
+    driver: `#include <stdio.h>
+#include <stdlib.h>
+
+/* Call your function from main(). Only lines in the Solution pane
+   are traced and illustrated; this driver runs silently. */
+int main(void) {
+    int n = 5;
+    int* a = malloc(sizeof(int) * n);
+    for (int i = 0; i < n; i++) a[i] = i + 1;
+    printf("%d\\n", solve(a, n));
+    free(a);
+    return 0;
+}
+`,
+  },
+  {
+    id: "custom-cpp",
+    label: "Custom code (C++)",
+    language: "cpp",
+    solution: `// Write ANY C++ code here: std::vector, std::string, structs,
+// recursion, pointers... The visualizer traces the real execution
+// and automatically picks a fitting illustration.
+#include <vector>
+using namespace std;
+
+int solve(const vector<int>& a) {
+    int sum = 0;
+    for (int i = 0; i < (int)a.size(); i++) {
+        sum += a[i];
+    }
+    return sum;
+}
+`,
+    driver: `#include <cstdio>
+#include <vector>
+
+// Call your function from main(). Only lines in the Solution pane
+// are traced and illustrated; this driver runs silently.
+int main() {
+    std::vector<int> a = {1, 2, 3, 4, 5};
+    std::printf("%d\\n", solve(a));
+    return 0;
+}
+`,
+  },
+];
+
 export const presets: Preset[] = [
   {
     id: "countbits-c",

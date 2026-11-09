@@ -190,8 +190,12 @@ export default function App() {
                 <p>Compiling and tracing in the sandbox…</p>
               ) : (
                 <p>
-                  Write a function and a <code>main()</code> driver, then press{" "}
-                  <strong>Illustrate</strong>. Or pick an example above.
+                  Write <strong>any C or C++ code</strong> — arrays, pointers,
+                  linked lists, trees, recursion, malloc/free — plus a small{" "}
+                  <code>main()</code> driver, then press <strong>Illustrate</strong>.
+                  <br />
+                  Pick <em>✏️ Custom code</em> in the Examples menu for a blank
+                  template, or try one of the examples.
                 </p>
               )}
             </div>
