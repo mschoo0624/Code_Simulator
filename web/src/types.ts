@@ -55,6 +55,7 @@ export interface Trace {
   solutionFile: string;
   truncated: boolean;
   truncatedReason?: string;
+  sampled?: boolean;
   compile: { ok: boolean; diagnostics: Diagnostic[] };
   stdout: string;
   stderr: string;

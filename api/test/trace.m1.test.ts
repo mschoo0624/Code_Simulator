@@ -249,6 +249,34 @@ describe.skipIf(!hasDocker)("M1 runner/tracer acceptance", () => {
     expect(trace.steps.some((s) => s.event === "call")).toBe(true);
     expect(trace.steps.some((s) => s.event === "return")).toBe(true);
   });
+
+  it("8. large loops are smart-sampled: full coverage within the step cap", () => {
+    const trace = runTrace("c", fixture("bigloop.solution.c"), fixture("bigloop.driver.c"));
+    expect(trace.compile.ok).toBe(true);
+
+    // the whole 1000-iteration run completes and is covered end to end
+    expect(trace.stdout).toBe("499500\n");
+    expect(trace.exitCode).toBe(0);
+    expect(trace.sampled).toBe(true);
+    expect(trace.truncated).toBe(false);
+    expect(trace.steps.length).toBeLessThanOrEqual(600);
+
+    // early iterations are dense (consecutive small i values), late ones sparse
+    const iVals = trace.steps
+      .map((s) => s.locals.i)
+      .filter((v): v is Extract<Value, { k: "int" }> => v?.k === "int")
+      .map((v) => v.v as number);
+    expect(Math.max(...iVals)).toBeGreaterThan(900); // reaches the END of the loop
+    // dense start: first few recorded i's advance by at most 1
+    for (let k = 1; k < 5; k++) {
+      expect(iVals[k] - iVals[k - 1]).toBeLessThanOrEqual(1);
+    }
+
+    // the final return still carries the true sum
+    const last = trace.steps[trace.steps.length - 1];
+    const sum = last.locals.sum;
+    expect(sum?.k === "int" && sum.v === 499500).toBe(true);
+  });
 });
 
 describe.skipIf(hasDocker)("without Docker", () => {

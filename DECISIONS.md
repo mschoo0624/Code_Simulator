@@ -132,3 +132,21 @@ Running log of implementation decisions where the spec left room (or reality dis
     step N was produced by the line of step N-1. Index expressions are evaluated
     against the current locals first, then the previous step's locals (the index
     variable may have left scope, e.g. after the final loop iteration).
+
+21. **Smart sampling for long runs.** The first `TRACER_SAMPLE_AFTER` (default 300)
+    recorded steps are dense; after that only every Nth solution `line` event is
+    recorded with a growing stride (4 → 16 → 64 as the trace fills). Always
+    recorded regardless of sampling: call/return/exception events and the
+    **first visit of every (function, line) pair** — so `return` statements and
+    first-hit branches are never lost to the stride. This lets a 1000-iteration
+    loop finish inside the 600-step cap with the *entire* execution covered
+    (dense start, sparse middle/end) instead of being cut off at iteration ~300.
+    Sampled traces set `sampled: true` (optional Trace field) and the UI shows
+    an explanatory banner. `changed`/`changedIndices` diff against the previous
+    *recorded* step, so across a sampling gap they aggregate every
+    write that happened in between — exactly what the array views should
+    highlight.
+
+22. **Removed unused `d3-hierarchy`.** TreeView uses a simple in-order layout
+    (x = in-order position, y = depth), so the dependency was never imported;
+    the spec forbids unused dependencies.

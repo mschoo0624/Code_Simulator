@@ -140,6 +140,12 @@ export default function App() {
           Trace limited to {trace.steps.length} steps ({trace.truncatedReason ?? "limit reached"}).
         </div>
       )}
+      {trace?.sampled && !trace.truncated && (
+        <div role="status" className="px-4 py-2 text-sm" style={{ background: "var(--cell-source)" }}>
+          Long run: early steps are recorded in full, later steps are sampled
+          (every Nth) to cover the whole execution.
+        </div>
+      )}
       {trace?.signal && (
         <div role="alert" className="px-4 py-2 text-sm font-semibold" style={{ background: "var(--cell-source)", color: "var(--error)" }}>
           Program crashed: {trace.signal}

@@ -118,6 +118,9 @@ Player state machine -> renderer registry -> SVG visual + captions
   more complex simply skips the source highlight.
 - Trace limits: 600 recorded steps, 8 s wall time, call depth 40, 50 array
   elements, 40 pointer-followed nodes, 64-char strings, 4 KB stdout/stderr.
+  Long runs are **smart-sampled**: the first ~300 steps are recorded densely,
+  later line steps every Nth (growing stride), so the whole execution is
+  covered; a banner marks sampled traces.
 
 ## Project structure
 

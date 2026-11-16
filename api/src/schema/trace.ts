@@ -101,6 +101,7 @@ export const TraceSchema = z.object({
   solutionFile: z.string(),
   truncated: z.boolean(),
   truncatedReason: z.string().optional(),
+  sampled: z.boolean().optional(),
   compile: z.object({
     ok: z.boolean(),
     diagnostics: z.array(DiagnosticSchema),

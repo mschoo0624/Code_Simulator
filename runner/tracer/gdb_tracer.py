@@ -28,6 +28,10 @@ DRIVER_FILE = os.environ.get("TRACER_DRIVER", "driver.c")
 
 MAX_STEPS = int(os.environ.get("TRACER_MAX_STEPS", "600"))
 MAX_WALL_S = float(os.environ.get("TRACER_MAX_WALL", "8"))
+# Smart sampling: record every solution line densely up to SAMPLE_AFTER
+# recorded steps, then only every Nth 'line' event (stride grows as the trace
+# fills up). call/return/exception events are always recorded.
+SAMPLE_AFTER = int(os.environ.get("TRACER_SAMPLE_AFTER", "300"))
 MAX_DEPTH = 40
 MAX_ARRAY = 50
 MAX_NODES = 40
@@ -509,6 +513,9 @@ class Tracer:
         self.exe_ranges = []
         self.done = False
         self.watchdog_fired = False
+        self.sampled = False        # True once any line step was skipped
+        self.line_candidates = 0    # sampled-phase 'line' events seen
+        self.line_counts = {}       # (func, line) -> visit count
 
     # -- watchdog -----------------------------------------------------------
     # A single `step` can block forever, e.g. in `while (1) { x = x + 1; }`
@@ -599,11 +606,42 @@ class Tracer:
             return "return"
         return "line"
 
+    # -- smart sampling -------------------------------------------------------
+    # Large loops would otherwise burn the whole 600-step budget on the first
+    # fraction of the run. Record densely up to SAMPLE_AFTER steps, then keep
+    # only every Nth 'line' event with a growing stride. Always kept:
+    # call/return/exception events and the FIRST visit of any (func, line)
+    # pair (so return statements and first-hit branches are never lost).
+    def sample_stride(self):
+        n = len(self.steps)
+        if n < SAMPLE_AFTER + 150:
+            return 4
+        if n < SAMPLE_AFTER + 250:
+            return 16
+        return 64
+
+    def sample_skip(self, func, line):
+        key = (func, line)
+        count = self.line_counts.get(key, 0) + 1
+        self.line_counts[key] = count
+        if len(self.steps) < SAMPLE_AFTER:
+            return False
+        if count == 1:
+            return False  # first time this line is ever hit: always record
+        self.line_candidates += 1
+        if self.line_candidates % self.sample_stride() == 0:
+            return False
+        self.sampled = True
+        return True
+
     def record(self, frame, line, event=None, error=None):
         depth = frame_depth(frame)
         if depth > MAX_DEPTH:
             self.truncate("call_depth")
             return False
+        ev = event or self.classify_event(depth)
+        if event is None and ev == "line" and self.sample_skip(frame.name() or "??", line):
+            return True  # skipped by sampling; keep stepping
         ALLOC.refresh()
         locals_ = collect_locals(frame, line, self.sticky_shown)
         key = frame_key(frame)
@@ -620,7 +658,6 @@ class Tracer:
                     changed_indices[name] = idxs
         self.last_locals[key] = locals_
 
-        ev = event or self.classify_event(depth)
         step = {
             "idx": len(self.steps),
             "event": ev,
@@ -804,6 +841,7 @@ class Tracer:
         data = {
             "truncated": self.truncated,
             "truncatedReason": self.truncated_reason,
+            "sampled": self.sampled,
             "exitCode": self.exit_code,
             "signal": self.signal,
             "leaks": self.leaks(),

@@ -177,6 +177,8 @@ def main():
         reason = "wall_time"
     if reason:
         trace["truncatedReason"] = reason
+    if part.get("sampled"):
+        trace["sampled"] = True
     trace["exitCode"] = part.get("exitCode")
     if part.get("signal"):
         trace["signal"] = part["signal"]
