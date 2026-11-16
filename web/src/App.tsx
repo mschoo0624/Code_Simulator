@@ -117,7 +117,7 @@ export default function App() {
   const crashStep = trace?.steps.find((s) => s.event === "exception");
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="app-shell">
       <TopBar
         language={language}
         onLanguage={(lang) => {
@@ -158,9 +158,21 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex flex-1 min-h-0">
+      <main className="workspace">
         {/* left: editors */}
-        <div className="w-1/2 border-r flex flex-col min-h-0" style={{ borderColor: "var(--border)" }}>
+        <section className="workspace-panel editor-panel" aria-label="Code editor">
+          <div className="panel-heading">
+            <div>
+              <span className="eyebrow"><span className="status-dot" /> YOUR WORKSPACE</span>
+              <h2>Code editor</h2>
+              <p>Write your function and set up its inputs.</p>
+            </div>
+            {ready && trace?.compile.ok && (
+              <button className="control-button" onClick={() => dispatch({ type: "edit" })}>
+                Edit code
+              </button>
+            )}
+          </div>
           <EditorPane
             language={language}
             solution={solution}
@@ -173,7 +185,7 @@ export default function App() {
               setDriver(s);
               if (ready) dispatch({ type: "edit" });
             }}
-            readOnly={ready}
+            readOnly={ready && !!trace?.compile.ok}
             currentLine={ready ? step?.line : undefined}
             diagnostics={trace?.compile.diagnostics ?? []}
           />
@@ -186,36 +198,58 @@ export default function App() {
               ))}
             </div>
           )}
-        </div>
+        </section>
 
         {/* right: visual + captions */}
-        <div className="w-1/2 flex flex-col min-h-0 overflow-auto">
-          {!ready && (
-            <div className="flex-1 flex items-center justify-center p-8 text-center" style={{ color: "var(--fg-soft)" }}>
+        <section className="workspace-panel visual-panel" aria-label="Execution visualization">
+          <div className="panel-heading visual-heading">
+            <div>
+              <span className="eyebrow"><span className="status-dot secondary" /> EXECUTION TRACE</span>
+              <h2>Visual walkthrough</h2>
+              <p>Follow your program, one step at a time.</p>
+            </div>
+            <span className="status-badge">{step ? "Trace ready" : trace && !trace.compile.ok ? "Compilation failed" : "Ready to explore"}</span>
+          </div>
+          {(!ready || !trace?.compile.ok) && (
+            <div className="empty-state">
               {state.status === "tracing" ? (
-                <p>Compiling and tracing in the sandbox…</p>
+                <div className="empty-content">
+                  <div className="empty-icon" aria-hidden="true">⌁</div>
+                  <h3>Bringing your code to life</h3>
+                  <p>Compiling and tracing in the sandbox…</p>
+                </div>
+              ) : trace && !trace.compile.ok ? (
+                <div className="empty-content">
+                  <div className="empty-icon" aria-hidden="true">!</div>
+                  <h3>Let's fix the code first.</h3>
+                  <p>Review the compiler messages under the editor, make your changes, then press Illustrate again.</p>
+                </div>
               ) : (
-                <p>
-                  Write <strong>any C or C++ code</strong> — arrays, pointers,
-                  linked lists, trees, recursion, malloc/free — plus a small{" "}
-                  <code>main()</code> driver, then press <strong>Illustrate</strong>.
-                  <br />
-                  Pick <em>✏️ Custom code</em> in the Examples menu for a blank
-                  template, or try one of the examples.
-                </p>
+                <div className="empty-content">
+                  <div className="empty-icon" aria-hidden="true">✦</div>
+                  <span className="eyebrow">YOUR CODE, VISUALIZED</span>
+                  <h3>See what happens<br />between the lines.</h3>
+                  <p>Write a C or C++ function, add a <code>main()</code> driver, and watch your program unfold.</p>
+                  <div className="empty-steps">
+                    <span><b>01</b> Write your code</span>
+                    <span><b>02</b> Choose an input</span>
+                    <span><b>03</b> Press Illustrate</span>
+                  </div>
+                  <p className="empty-hint">Not sure where to start? Pick an example above.</p>
+                </div>
               )}
             </div>
           )}
 
           {ready && trace && step && effAnnotation && Viz && (
             <>
-              <div className="flex items-center gap-2 px-3 py-1.5 border-b text-xs" style={{ borderColor: "var(--border)" }}>
-                <label style={{ color: "var(--fg-soft)" }}>
+              <div className="visual-toolbar">
+                <label>
                   Visual{" "}
                   <select
                     value={effAnnotation.viz}
                     onChange={(e) => dispatch({ type: "set_viz", viz: e.target.value as VizKind, primary: state.primaryOverride })}
-                    style={{ background: "var(--bg)", color: "var(--fg)", border: "1px solid var(--border)", borderRadius: 4 }}
+                    className="select-control"
                   >
                     {VIZ_KINDS.map((v) => (
                       <option key={v} value={v}>
@@ -224,12 +258,12 @@ export default function App() {
                     ))}
                   </select>
                 </label>
-                <label style={{ color: "var(--fg-soft)" }}>
+                <label>
                   Primary{" "}
                   <select
                     value={effAnnotation.primary}
                     onChange={(e) => dispatch({ type: "set_viz", viz: state.vizOverride, primary: e.target.value })}
-                    style={{ background: "var(--bg)", color: "var(--fg)", border: "1px solid var(--border)", borderRadius: 4 }}
+                    className="select-control"
                   >
                     {[effAnnotation.primary, ...primaryCandidates.filter((n) => n !== effAnnotation.primary)].map((n) => (
                       <option key={n} value={n}>
@@ -238,31 +272,28 @@ export default function App() {
                     ))}
                   </select>
                 </label>
-                <span className="flex-1" />
-                <span style={{ color: "var(--fg-soft)" }}>
+                <span className="trace-location">
                   {step.func}() · line {step.line} · {step.event}
                 </span>
               </div>
 
-              <div className="flex-1 overflow-auto">
+              <div className="visual-details">
+              <div className="visual-canvas">
                 <Viz step={step} prevStep={prevStep} annotation={effAnnotation} trace={trace} solution={solution} />
               </div>
 
-              <p
-                aria-live="polite"
-                className="px-4 py-2 border-t text-sm min-h-[2.5rem]"
-                style={{ borderColor: "var(--border)", background: "var(--bg-soft)" }}
-              >
-                {caption}
-              </p>
+              <div className="caption-strip">
+                <span className="caption-icon" aria-hidden="true">✦</span>
+                <div><span className="eyebrow">CURRENT STEP</span><p aria-live="polite">{caption}</p></div>
+              </div>
 
               {annotation && annotation.insight && (
-                <div className="px-4 py-2 grid grid-cols-2 gap-2 text-xs border-t" style={{ borderColor: "var(--border)" }}>
-                  <div className="border rounded p-2" style={{ borderColor: "var(--border)" }}>
+                <div className="insight-grid">
+                  <div className="info-card">
                     <strong>Insight</strong>
                     <p style={{ color: "var(--fg-soft)" }}>{annotation.insight}</p>
                   </div>
-                  <div className="border rounded p-2" style={{ borderColor: "var(--border)" }}>
+                  <div className="info-card">
                     <strong>Complexity</strong>
                     <p style={{ color: "var(--fg-soft)" }}>
                       time {annotation.complexity.time} · space {annotation.complexity.space}
@@ -271,8 +302,9 @@ export default function App() {
                 </div>
               )}
 
-              <div className="px-3 py-2">
+              <div className="output-wrap">
                 <OutputPanel trace={trace} />
+              </div>
               </div>
 
               <Controls
@@ -297,7 +329,7 @@ export default function App() {
               </div>
             </div>
           )}
-        </div>
+        </section>
       </main>
     </div>
   );

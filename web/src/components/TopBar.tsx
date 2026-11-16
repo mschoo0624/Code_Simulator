@@ -10,39 +10,36 @@ interface Props {
 
 export function TopBar({ language, onLanguage, onPreset, onIllustrate, busy }: Props) {
   return (
-    <header
-      className="flex items-center gap-3 px-4 py-2 border-b"
-      style={{ borderColor: "var(--border)", background: "var(--bg-soft)" }}
-    >
-      <h1 className="font-bold text-base mr-2">CodeLens-C</h1>
+    <header className="topbar">
+      <div className="brand">
+        <span className="brand-mark" aria-hidden="true">&lt;/&gt;</span>
+        <div>
+          <h1>CodeLens<span>-C</span></h1>
+          <p>SEE YOUR CODE COME TO LIFE</p>
+        </div>
+      </div>
 
       <div
         role="group"
         aria-label="Language"
-        className="flex rounded overflow-hidden border"
-        style={{ borderColor: "var(--border)" }}
+        className="language-switch"
       >
         {(["c", "cpp"] as const).map((lang) => (
           <button
             key={lang}
             onClick={() => onLanguage(lang)}
             aria-pressed={language === lang}
-            className="px-3 py-1 text-sm"
-            style={{
-              background: language === lang ? "var(--accent)" : "var(--bg)",
-              color: language === lang ? "#fff" : "var(--fg)",
-            }}
+            className="language-button"
           >
             {lang === "c" ? "C" : "C++"}
           </button>
         ))}
       </div>
 
-      <label className="text-sm" style={{ color: "var(--fg-soft)" }}>
-        Examples{" "}
+      <label className="topbar-examples">
+        <span>Examples</span>
         <select
-          className="border rounded px-2 py-1 text-sm"
-          style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--fg)" }}
+          className="select-control"
           defaultValue=""
           onChange={(e) => {
             const p = [...customTemplates, ...presets].find((x) => x.id === e.target.value);
@@ -70,19 +67,14 @@ export function TopBar({ language, onLanguage, onPreset, onIllustrate, busy }: P
         </select>
       </label>
 
-      <div className="flex-1" />
+      <div className="topbar-spacer" />
 
       <button
         onClick={onIllustrate}
         disabled={busy}
-        className="px-4 py-1.5 rounded font-semibold text-sm"
-        style={{
-          background: busy ? "var(--border)" : "var(--accent)",
-          color: "#fff",
-          cursor: busy ? "wait" : "pointer",
-        }}
+        className="primary-button illustrate-button"
       >
-        {busy ? "Tracing…" : "Illustrate"}
+        <span aria-hidden="true">✦</span> {busy ? "Tracing…" : "Illustrate"}
       </button>
     </header>
   );

@@ -35,32 +35,28 @@ export function Controls(props: Props) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const btn = "px-3 py-1 rounded border text-sm";
-  const btnStyle = { borderColor: "var(--border)", background: "var(--bg)", color: "var(--fg)" };
-
   return (
-    <div className="flex items-center gap-2 px-3 py-2 border-t" style={{ borderColor: "var(--border)" }}>
-      <button className={btn} style={btnStyle} onClick={() => props.onDelta(-1)} aria-label="Previous step">
+    <div className="player-controls">
+      <div className="player-buttons">
+      <button className="control-button" onClick={() => props.onDelta(-1)} aria-label="Previous step">
         ◀ Prev
       </button>
       <button
-        className={btn}
-        style={{ ...btnStyle, background: "var(--accent)", color: "#fff", borderColor: "var(--accent)" }}
+        className="primary-button play-button"
         onClick={props.onPlayPause}
         aria-label={playing ? "Pause" : "Play"}
       >
         {playing ? "⏸ Pause" : "▶ Play"}
       </button>
-      <button className={btn} style={btnStyle} onClick={() => props.onDelta(1)} aria-label="Next step">
+      <button className="control-button" onClick={() => props.onDelta(1)} aria-label="Next step">
         Next ▶
       </button>
-      <button className={btn} style={btnStyle} onClick={props.onReset} aria-label="Reset to first step">
+      <button className="control-button" onClick={props.onReset} aria-label="Reset to first step">
         ↺ Reset
       </button>
 
       <select
-        className="border rounded px-1 py-1 text-sm"
-        style={btnStyle}
+        className="select-control speed-select"
         value={speed}
         onChange={(e) => props.onSpeed(Number(e.target.value) as 0.5 | 1 | 2)}
         aria-label="Playback speed"
@@ -69,19 +65,21 @@ export function Controls(props: Props) {
         <option value={1}>1×</option>
         <option value={2}>2×</option>
       </select>
-
+      </div>
+      <div className="player-progress">
       <input
         type="range"
-        className="flex-1"
+        className="step-slider"
         min={0}
         max={Math.max(0, stepCount - 1)}
         value={stepIdx}
         onChange={(e) => props.onStepTo(Number(e.target.value))}
         aria-label="Step slider"
       />
-      <span className="text-sm tabular-nums" style={{ color: "var(--fg-soft)" }}>
+      <span className="step-count tabular-nums">
         {stepCount === 0 ? "0 / 0" : `${stepIdx + 1} / ${stepCount}`}
       </span>
+      </div>
     </div>
   );
 }

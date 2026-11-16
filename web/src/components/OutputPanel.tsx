@@ -8,11 +8,8 @@ export function OutputPanel({ trace }: { trace: Trace }) {
         ? "did not exit"
         : `exited with code ${trace.exitCode}`;
   return (
-    <section
-      className="border rounded p-3 text-sm"
-      style={{ borderColor: "var(--border)", background: "var(--bg-soft)" }}
-    >
-      <h3 className="font-semibold mb-1">Output</h3>
+    <section className="output-panel">
+      <h3><span aria-hidden="true">⌁</span> Program output</h3>
       <p className="mb-1" style={{ color: trace.signal ? "var(--error)" : "var(--fg-soft)" }}>
         Program {status}.
       </p>

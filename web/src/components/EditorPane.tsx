@@ -29,6 +29,14 @@ export function EditorPane({
   const solEditor = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
   const decorations = useRef<string[]>([]);
+  const [dark, setDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => setDark(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   const monacoLang = language === "c" ? "c" : "cpp";
 
@@ -86,27 +94,23 @@ export function EditorPane({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex border-b" style={{ borderColor: "var(--border)" }} role="tablist">
+      <div className="editor-tabs" role="tablist" aria-label="Code panes">
         {(["solution", "driver"] as const).map((t) => (
           <button
             key={t}
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className="px-4 py-1.5 text-sm"
-            style={{
-              borderBottom: tab === t ? "2px solid var(--accent)" : "2px solid transparent",
-              fontWeight: tab === t ? 600 : 400,
-              color: "var(--fg)",
-            }}
+            className="editor-tab"
           >
             {t === "solution" ? "Solution" : "Driver (main)"}
           </button>
         ))}
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="editor-content flex-1 min-h-0">
         {tab === "solution" ? (
           <Editor
+            theme={dark ? "vs-dark" : "light"}
             language={monacoLang}
             value={solution}
             onChange={(v) => onSolution(v ?? "")}
@@ -120,10 +124,12 @@ export function EditorPane({
               fontSize: 13,
               glyphMargin: true,
               scrollBeyondLastLine: false,
+              padding: { top: 16 },
             }}
           />
         ) : (
           <Editor
+            theme={dark ? "vs-dark" : "light"}
             language={monacoLang}
             value={driver}
             onChange={(v) => onDriver(v ?? "")}
@@ -132,6 +138,7 @@ export function EditorPane({
               minimap: { enabled: false },
               fontSize: 13,
               scrollBeyondLastLine: false,
+              padding: { top: 16 },
             }}
           />
         )}
